@@ -24,17 +24,16 @@ const initializeDB = async () => {
 
 const signUpFunction = async (request, response) => {
   initializeDB();
- 
+
   const { firstName, lastName, email, password } = request.body;
 
   if (validateInput.Email(email)) {
     const hashedPassword = await bcrypt.hash(password, 10);
     const selectUserQuery = `SELECT * FROM user_details WHERE email = '${email}'`;
-    
+
     try {
       const dbUser = await db.get(selectUserQuery);
       if (dbUser === undefined) {
-        
         const createUserQuery = `
                     INSERT INTO 
                     user_details (first_name, last_name,email, password,created_on) 
@@ -48,7 +47,7 @@ const signUpFunction = async (request, response) => {
                     )`;
         const dbResponse = await db.run(createUserQuery);
         const newUserId = dbResponse.lastID;
-        response.send(`Created new user with ${newUserId}`);
+        response.send(`Created new user with id ${newUserId}`);
       } else {
         response.status = 400;
         response.send("User already exists");
@@ -63,25 +62,35 @@ const signUpFunction = async (request, response) => {
 };
 
 const loginFunction = async (request, response) => {
+  initializeDB();
+
   const { email, password } = request.body;
   if (validateInput.Email(email)) {
-    const selectUserQuery = `SELECT * FROM user WHERE username = '${email}'`;
-    const dbUser = await db.get(selectUserQuery);
-    if (dbUser === undefined) {
-      response.status(400);
-      response.send("Invalid User");
-    } else {
-      const isPasswordMatched = await bcrypt.compare(password, dbUser.password);
-      if (isPasswordMatched === true) {
-        const payload = {
-          email: email,
-        };
-        const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
-        response.send({ jwtToken });
-      } else {
+    const selectUserQuery = `SELECT * FROM user_details WHERE email = '${email}'`;
+    try {
+      const dbUser = await db.get(selectUserQuery);
+      if (dbUser === undefined) {
         response.status(400);
-        response.send("Invalid Password");
+        response.send("Invalid User");
+      } else {
+        const isPasswordMatched = await bcrypt.compare(
+          password,
+          dbUser.password
+        );
+        if (isPasswordMatched === true) {
+          const payload = {
+            email: email,
+          };
+          const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+          //   response.send("login suceess");
+          response.send({ message: "login succesful", jwtToken: jwtToken });
+        } else {
+          response.status(400);
+          response.send("Invalid Password");
+        }
       }
+    } catch (error) {
+      response.send(error);
     }
   } else {
     response.status(400);
