@@ -1,0 +1,16 @@
+{
+  "name": "bolt-fasting-backend",
+  "version": "1.0.0",
+  "description": "bolt-fasting backend application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Anvesh Reddy",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.17.1",
+    "sqlite": "^4.0.22",
+    "sqlite3": "^5.0.2"
+  }
+}
