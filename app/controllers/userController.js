@@ -1,6 +1,7 @@
 const validateInput = require("../libs/paramsValidation");
 const bcrypt = require("bcrypt");
 const time = require("./../libs/timeLib");
+const apiResponseFormat = require("../libs/responseLib");
 const jwt = require("jsonwebtoken");
 const path = require("path");
 const { open } = require("sqlite");
@@ -47,7 +48,13 @@ const signUpFunction = async (request, response) => {
                     )`;
         const dbResponse = await db.run(createUserQuery);
         const newUserId = dbResponse.lastID;
-        response.send(`Created new user with id ${newUserId}`);
+        let apiResponse = apiResponseFormat.generate(
+          false,
+          "User created",
+          200,
+          newUserId
+        );
+        response.send(apiResponse);
       } else {
         response.status = 400;
         response.send("User already exists");
@@ -82,8 +89,15 @@ const loginFunction = async (request, response) => {
             email: email,
           };
           const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+          let apiResponse = apiResponseFormat.generate(
+            false,
+            "login succesful",
+            200,
+            jwtToken
+          );
+          response.send(apiResponse);
           //   response.send("login suceess");
-          response.send({ message: "login succesful", jwtToken: jwtToken });
+          // response.send({ message: "login succesful", jwtToken: jwtToken });
         } else {
           response.status(400);
           response.send("Invalid Password");
