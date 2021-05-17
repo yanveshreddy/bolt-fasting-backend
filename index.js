@@ -1,13 +1,14 @@
 const express = require("express");
 const fs = require("fs");
 const app = express();
-
+const cors = require("cors");
 const path = require("path");
 
 const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
 
 app.use(express.json());
+app.use(cors());
 // app.use(express.urlencoded());
 
 // const controllersPath = './app/controllers';
