@@ -6,22 +6,17 @@ const userFastingController = require("../controllers/userFastingController");
 
 module.exports.setRouter = (app) => {
   app.post(
-    "/users/fastinghistory",
+    "/users/:userId/createfastinghistory",
     userFastingController.createUserFastingHistory
   );
 
   app.post(
-    "/users/fastingdetails",
-    userFastingController.createUserFastingDetail
+    "/users/userId/updatefastingdetails",
+    userFastingController.createUserFastingDetails
   );
 
-  //   app.put(
-  //     "/users/:userId/updateFastingHistory",
-  //     userFastingController.updateUserFastingHistory
-  //   );
-
-  //   app.post(
-  //     "/users/:userId/updateFastingDetail",
-  //     userFastingController.updateUserFastingDetail
-  //   );
+  app.get(
+    "/users/:userId/getfastingdetails",
+    userFastingController.getUserFastingDetails
+  );
 };

@@ -88,7 +88,7 @@ const createUserFastingHistory = async (request, response) => {
   }
 };
 
-const createUserFastingDetail = async (request, response) => {
+const createUserFastingDetails = async (request, response) => {
   await initializeDB();
   const { userId, startTime, endTime, fastingTime, goalTime } = request.body;
   let is_goal_accomplished = fastingTime > goalTime;
@@ -169,14 +169,49 @@ const createUserFastingDetail = async (request, response) => {
         dbResponse
       );
       response.send(apiResponse);
+      db.close();
     }
   } catch (error) {
     console.log(error);
     response.send(error);
+    db.close();
+  }
+};
+
+const getUserFastingDetails = async (request, response) => {
+  await initializeDB();
+  const { userId } = request.params;
+  const getUserFastingDataQuery = `
+    SELECT
+      user_id,
+      total_fasts,
+      longest_fast,
+      longest_streak,
+      current_streak
+    FROM
+      user_fasting_details
+    WHERE
+      user_id = ${userId};`;
+  try {
+    const dbResponse = await db.get(getUserFastingDataQuery);
+
+    let apiResponse = apiResponseFormat.generate(
+      false,
+      "User fasting details retrieved successfully",
+      200,
+      dbResponse
+    );
+    response.send(apiResponse);
+    db.close();
+  } catch (error) {
+    console.log(error);
+    response.send(error);
+    db.close();
   }
 };
 
 module.exports = {
   createUserFastingHistory: createUserFastingHistory,
-  createUserFastingDetail: createUserFastingDetail,
+  createUserFastingDetails: createUserFastingDetails,
+  getUserFastingDetails: getUserFastingDetails,
 };
