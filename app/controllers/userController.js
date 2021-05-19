@@ -24,7 +24,7 @@ const initializeDB = async () => {
 };
 
 const signUpFunction = async (request, response) => {
-  initializeDB();
+  await initializeDB();
 
   const { firstName, lastName, email, password } = request.body;
 
@@ -55,12 +55,15 @@ const signUpFunction = async (request, response) => {
           newUserId
         );
         response.send(apiResponse);
+        db.close();
       } else {
         response.status = 400;
         response.send("User already exists");
+        db.close();
       }
     } catch (error) {
       response.send(error);
+      db.close();
     }
   } else {
     response.status = 400;
@@ -69,7 +72,7 @@ const signUpFunction = async (request, response) => {
 };
 
 const loginFunction = async (request, response) => {
-  initializeDB();
+  await initializeDB();
 
   const { email, password } = request.body;
   if (validateInput.Email(email)) {
@@ -88,23 +91,27 @@ const loginFunction = async (request, response) => {
           const payload = {
             email: email,
           };
-          const jwtToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+          const accessToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+
           let apiResponse = apiResponseFormat.generate(
             false,
             "login succesful",
             200,
-            jwtToken
+            { accessToken: accessToken }
           );
           response.send(apiResponse);
+          db.close();
           //   response.send("login suceess");
           // response.send({ message: "login succesful", jwtToken: jwtToken });
         } else {
           response.status(400);
           response.send("Invalid Password");
+          db.close();
         }
       }
     } catch (error) {
       response.send(error);
+      db.close();
     }
   } else {
     response.status(400);

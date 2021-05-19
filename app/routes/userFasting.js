@@ -19,4 +19,9 @@ module.exports.setRouter = (app) => {
     "/users/:userId/getfastingdetails",
     userFastingController.getUserFastingDetails
   );
+
+  app.get(
+    "/users/:userId/getweeklyfastingData",
+    userFastingController.getWeeklyFastingData
+  );
 };

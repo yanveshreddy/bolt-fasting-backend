@@ -3,6 +3,7 @@ const apiResponseFormat = require("../libs/responseLib");
 const path = require("path");
 const { open } = require("sqlite");
 const sqlite3 = require("sqlite3");
+const { request } = require("http");
 
 const dbPath = path.join(__dirname, "../../boltfasting.db");
 
@@ -209,9 +210,39 @@ const getUserFastingDetails = async (request, response) => {
     db.close();
   }
 };
+const getWeeklyFastingData = async (request, response) => {
+  await initializeDB();
+  const { userId } = request.params;
+
+  const getWeeklyFastingDataQuery = `
+    SELECT
+      user_id,started_at,fasting_time
+    FROM
+      user_fasting_history
+    WHERE
+      user_id = ${userId} ORDER by started_at desc LIMIT 7`;
+
+  try {
+    const dbResponse = await db.all(getWeeklyFastingDataQuery);
+
+    let apiResponse = apiResponseFormat.generate(
+      false,
+      "data retrieved successfully",
+      200,
+      dbResponse
+    );
+    response.send(apiResponse);
+    db.close();
+  } catch (error) {
+    console.log(error);
+    response.send(error);
+    db.close();
+  }
+};
 
 module.exports = {
   createUserFastingHistory: createUserFastingHistory,
   createUserFastingDetails: createUserFastingDetails,
   getUserFastingDetails: getUserFastingDetails,
+  getWeeklyFastingData: getWeeklyFastingData,
 };
