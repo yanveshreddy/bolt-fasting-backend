@@ -59,11 +59,11 @@ const signUpFunction = async (request, response) => {
       } else {
         response.status = 400;
         response.send("User already exists");
-        db.close();
+        // db.close();
       }
     } catch (error) {
       response.send(error);
-      db.close();
+      // db.close();
     }
   } else {
     response.status = 400;
@@ -78,7 +78,7 @@ const loginFunction = async (request, response) => {
   if (validateInput.Email(email)) {
     const selectUserQuery = `SELECT * FROM user_details WHERE email = '${email}'`;
     try {
-      const dbUser = await db.get(selectUserQuery);
+      let dbUser = await db.get(selectUserQuery);
       if (dbUser === undefined) {
         response.status(400);
         response.send("Invalid User");
@@ -92,26 +92,28 @@ const loginFunction = async (request, response) => {
             email: email,
           };
           const accessToken = jwt.sign(payload, "MY_SECRET_TOKEN");
+          // console.log(dbUser);
+          const userId = dbUser.id;
 
           let apiResponse = apiResponseFormat.generate(
             false,
             "login succesful",
             200,
-            { accessToken: accessToken }
+            { accessToken: accessToken, userId: userId }
           );
           response.send(apiResponse);
-          db.close();
+          // db.close();
           //   response.send("login suceess");
           // response.send({ message: "login succesful", jwtToken: jwtToken });
         } else {
           response.status(400);
           response.send("Invalid Password");
-          db.close();
+          // db.close();
         }
       }
     } catch (error) {
       response.send(error);
-      db.close();
+      // db.close();
     }
   } else {
     response.status(400);

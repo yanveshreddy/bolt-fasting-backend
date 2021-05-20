@@ -23,15 +23,12 @@ const initializeDB = async () => {
 
 const createUserFastingHistory = async (request, response) => {
   await initializeDB();
-
-  const { userId, prevStartTime, startTime, endTime, goalTime, fastingTime } =
-    request.body;
-
-  let is_goal_accomplished = fastingTime > goalTime;
-  const selectUserFastingHistoryQuery = `SELECT * FROM user_fasting_history WHERE user_id = ${userId} and started_at = ${prevStartTime}`;
+  const { userId, startTime, endTime, goalTime, fastingTime } = request.body;
+  // console.log(request.body);
+  let is_goal_accomplished = fastingTime > goalTime * 3600;
+  const selectUserFastingHistoryQuery = `SELECT * FROM user_fasting_history WHERE user_id = ${userId} and started_at = ${startTime}`;
   try {
     const dbResult = await db.get(selectUserFastingHistoryQuery);
-
     if (dbResult === undefined) {
       const createUserFastingHistoryQuery = `
                       INSERT INTO
@@ -41,12 +38,13 @@ const createUserFastingHistory = async (request, response) => {
                           ${userId},
                           ${startTime},
                           ${endTime},
-                          ${goalTime},
+                          ${goalTime * 3600},
                           ${is_goal_accomplished ? 1 : 0},
                           ${fastingTime},
                           '${time.now()}',
                           '${time.now()}'
                       )`;
+
       let dbResponse = await db.run(createUserFastingHistoryQuery);
       dbResponse = { ...dbResponse, startTime: startTime };
       // const newUserId = dbResponse.lastID;
@@ -60,16 +58,16 @@ const createUserFastingHistory = async (request, response) => {
       response.send(apiResponse);
     } else {
       const updateUserFastingHistoryQuery = `
-                      Update user_fasting_history
-                      SET user_id = ${userId},
-                          started_at = ${startTime},
-                          ended_at = ${endTime},
-                          goal_time = ${goalTime},
-                          is_goal_accomplished = ${is_goal_accomplished},
-                          fasting_time =${fastingTime},
-                          updated_on = '${time.now()}'
-                      WHERE user_id=${userId}
-                      `;
+                        Update user_fasting_history
+                        SET user_id = ${userId},
+                            started_at = ${startTime},
+                            ended_at = ${endTime},
+                            goal_time = ${goalTime},
+                            is_goal_accomplished = ${is_goal_accomplished},
+                            fasting_time =${fastingTime},
+                            updated_on = '${time.now()}'
+                        WHERE user_id=${userId} and started_at =${startTime}
+                        `;
       let dbResponse = await db.run(updateUserFastingHistoryQuery);
       dbResponse = { ...dbResponse, startTime: startTime };
       // const newUserId = dbResponse.lastID;
@@ -80,20 +78,19 @@ const createUserFastingHistory = async (request, response) => {
         dbResponse
       );
       response.send(apiResponse);
-      db.close();
     }
   } catch (error) {
     console.log(error);
     response.send(error);
-    db.close();
+    // await db.close();
   }
 };
 
 const createUserFastingDetails = async (request, response) => {
   await initializeDB();
   const { userId, startTime, endTime, fastingTime, goalTime } = request.body;
-  let is_goal_accomplished = fastingTime > goalTime;
-  // console.log(body);
+  let is_goal_accomplished = fastingTime > goalTime * 3600;
+  console.log(is_goal_accomplished);
 
   const selectUserFastingDetailQuery = `SELECT * FROM user_fasting_details WHERE user_id=${userId}`;
   try {
@@ -101,8 +98,8 @@ const createUserFastingDetails = async (request, response) => {
     if (dbResult === undefined) {
       const createUserFastingDetailQuery = `
                       INSERT INTO
-                      user_fasting_details (user_id, cur_started_at,cur_ended_at,total_fasts,longest_fast,second_longest_fast,
-                        longest_streak,second_longest_streak,current_streak,created_on,updated_on)
+                      user_fasting_details (user_id, cur_started_at,cur_ended_at,total_fasts,avg_fast,longest_fast,
+                        longest_streak,current_streak,created_on,updated_on)
                       VALUES
                       (
                           ${userId},
@@ -111,7 +108,6 @@ const createUserFastingDetails = async (request, response) => {
                           ${is_goal_accomplished ? 1 : 0},
                           ${fastingTime},
                           ${fastingTime},
-                          ${is_goal_accomplished ? 1 : 0},
                           ${is_goal_accomplished ? 1 : 0},
                           ${is_goal_accomplished ? 1 : 0},
                           '${time.now()}',
@@ -126,13 +122,13 @@ const createUserFastingDetails = async (request, response) => {
         dbResponse
       );
       response.send(apiResponse);
+      // await db.close();
     } else {
       const {
         total_fasts,
+        avg_fast,
         longest_fast,
-        second_longest_fast,
         longest_streak,
-        second_longest_streak,
         current_streak,
       } = dbResult;
 
@@ -143,18 +139,20 @@ const createUserFastingDetails = async (request, response) => {
                           total_fasts = ${
                             is_goal_accomplished ? total_fasts + 1 : total_fasts
                           },
+                          avg_fast =${Math.round((fastingTime + avg_fast) / 2)},
                           longest_fast = ${
                             fastingTime > longest_fast
                               ? fastingTime
-                              : second_longest_fast
+                              : longest_fast
                           },
-                          second_longest_fast = ${longest_fast},
+                         
                           longest_streak = ${
-                            current_streak > longest_streak
-                              ? current_streak
-                              : second_longest_streak
+                            is_goal_accomplished
+                              ? current_streak + 1 > longest_streak
+                                ? current_streak + 1
+                                : longest_streak
+                              : longest_streak
                           },
-                          second_longest_streak  = ${longest_streak},
                           current_streak = ${
                             is_goal_accomplished ? current_streak + 1 : 0
                           },
@@ -170,12 +168,12 @@ const createUserFastingDetails = async (request, response) => {
         dbResponse
       );
       response.send(apiResponse);
-      db.close();
+      // await db.close();
     }
   } catch (error) {
     console.log(error);
     response.send(error);
-    db.close();
+    // await db.close();
   }
 };
 
@@ -186,6 +184,7 @@ const getUserFastingDetails = async (request, response) => {
     SELECT
       user_id,
       total_fasts,
+      avg_fast,
       longest_fast,
       longest_streak,
       current_streak
@@ -203,11 +202,11 @@ const getUserFastingDetails = async (request, response) => {
       dbResponse
     );
     response.send(apiResponse);
-    db.close();
+    // await db.close();
   } catch (error) {
     console.log(error);
     response.send(error);
-    db.close();
+    // await db.close();
   }
 };
 const getWeeklyFastingData = async (request, response) => {
@@ -232,11 +231,11 @@ const getWeeklyFastingData = async (request, response) => {
       dbResponse
     );
     response.send(apiResponse);
-    db.close();
+    // await db.close();
   } catch (error) {
     console.log(error);
     response.send(error);
-    db.close();
+    // await db.close();
   }
 };
 
